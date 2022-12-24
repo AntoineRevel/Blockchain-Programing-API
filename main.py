@@ -71,6 +71,7 @@ def menuBidAsk():
 
 def print_menu():
   print("1. Get all pairs listed on coin base")
+  print("2. Get the bid or ask on a pair")
 def menu():
     while True:
         print_menu()
