@@ -1,16 +1,34 @@
-# This is a sample Python script.
-
-# Press ⌃R to execute it or replace it with your code.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
+import requests
 
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
+
+def GetCoin():
+    response = requests.get("https://api.coinbase.com/v2/currencies")
+
+    # Check the status code to make sure the request was successful
+    if response.status_code == 200:
+        data = response.json()
+        # The list of currencies is stored in the "data" field of the response
+        currencies = data['data']
+        # Extract the names of the currencies
+        currency_names = [currency['name'] for currency in currencies]
+        # Print the list of currency names
+        print(currency_names)
+    else:
+        # Print an error message if the request was unsuccessful
+        print("Error:", response.status_code)
 
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+def print_menu():
+  print("1. Get all pairs listed on coin base")
+def menu():
+    while True:
+        print_menu()
+        choice = input("Enter your choice: ")
+        if choice == "1":
+            print("You selected option 1")
+            GetCoin()
+
+#menu()
+GetCoin()
