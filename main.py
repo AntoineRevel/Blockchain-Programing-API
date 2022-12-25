@@ -150,7 +150,6 @@ def connect_db_store_candles(candles):
     user = config['database']['user']
     password = config['database']['password']
     database = config['database']['database']
-    print(hos)
 
     # Connect to the database
     cnx = mysql.connector.connect(
@@ -159,13 +158,23 @@ def connect_db_store_candles(candles):
         password=password,
         database=database
     )
+    cursor = cnx.cursor()
+    for candle in candles:
+        # Extract the data from the candle
+        timestamp, high_price, low_price,open_price, close_price, volume = candle
+        # Insert the data into the table
+        cursor.execute(
+            f"INSERT INTO Candels (Date, high, low,open, close, volume) VALUES ({timestamp}, {high_price}, {low_price},{open_price}, {close_price}, {volume})")
+
+    # Commit the changes
+    cnx.commit()
 
 
 def print_menu():
   print("1. Get all pairs listed on coin base")
   print("2. Get the bid or ask on a pair")
   print("3. Get the orderbook on a pair")
-  print("4. Get candel")
+  print("4. Get candel and store in db")
 def menu():
     while True:
         print_menu()
