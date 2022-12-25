@@ -99,9 +99,44 @@ def get_candlestick_data(asset, granularity):
         # Print an error message if the request was unsuccessful
         print("Error:", response.status_code)
 
+def menu_get_candlestick_data():
+    granularity_options = {
+        '1': 60,
+        '2': 300,
+        '3': 900,
+        '4': 3600,
+        '5': 21600,
+        '6': 86400
+    }
 
+    # Main menu loop
+    while True:
+        # Print the menu options
+        print("1. 1-minute candlesticks")
+        print("2. 5-minute candlesticks")
+        print("3. 15-minute candlesticks")
+        print("4. 1-hour candlesticks")
+        print("5. 6-hour candlesticks")
+        print("6. 1-day candlesticks")
+        print("7. Quit")
+        # Get the user's input
+        choice = input("Enter your choice: ")
 
-
+        # Validate the input
+        if choice in granularity_options:
+            # User has chosen a valid granularity option
+            asset = input("Enter the asset (e.g., BTC-USD): ")
+            # Get the corresponding granularity value from the dictionary
+            granularity = granularity_options[choice]
+            # Call the get_candlestick_data() function
+            candles = get_candlestick_data(asset, granularity)
+            print(candles)
+        elif choice == "7":
+            # User wants to quit
+            break
+        else:
+            # Invalid input
+            print("Invalid choice. Please try again.")
 
 
 def print_menu():
@@ -122,11 +157,7 @@ def menu():
             asset = input("Enter the asset (e.g., BTC-USD): ")
             print(get_order_book(asset))
         if choice =="4":
-            asset = input("Enter the asset (e.g., BTC-USD): ")
-            granularity = input("Enter the granularity (in seconds): ")
-            # Convert the granularity to an integer
-            granularity = int(granularity)
-            print(get_candlestick_data(asset, granularity))
+            menu_get_candlestick_data()
 
 
 
