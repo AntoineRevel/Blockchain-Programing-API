@@ -1,6 +1,6 @@
 import requests
-
-
+import mysql.connector
+import json
 
 def GetCoin():
     response = requests.get("https://api.coinbase.com/v2/currencies")
@@ -130,6 +130,7 @@ def menu_get_candlestick_data():
             granularity = granularity_options[choice]
             # Call the get_candlestick_data() function
             candles = get_candlestick_data(asset, granularity)
+            connect_db_store_candles(candles)
             print(candles)
         elif choice == "7":
             # User wants to quit
@@ -137,6 +138,27 @@ def menu_get_candlestick_data():
         else:
             # Invalid input
             print("Invalid choice. Please try again.")
+
+def connect_db_store_candles(candles):
+
+    # Load the configuration file
+    with open('config.json') as f:
+        config = json.load(f)
+
+    # Extract the database connection details from the configuration file
+    host = config['database']['host']
+    user = config['database']['user']
+    password = config['database']['password']
+    database = config['database']['database']
+    print(hos)
+
+    # Connect to the database
+    cnx = mysql.connector.connect(
+        host=host,
+        user=user,
+        password=password,
+        database=database
+    )
 
 
 def print_menu():
