@@ -1,6 +1,10 @@
+from datetime import datetime
+
 import requests
 import mysql.connector
 import json
+import sys
+
 
 def GetCoin():
     response = requests.get("https://api.coinbase.com/v2/currencies")
@@ -130,7 +134,7 @@ def menu_get_candlestick_data():
             granularity = granularity_options[choice]
             # Call the get_candlestick_data() function
             candles = get_candlestick_data(asset, granularity)
-            connect_db_store_candles(candles)
+            connect_db_store_candles(candles,asset)
             print(candles)
         elif choice == "7":
             # User wants to quit
@@ -139,8 +143,7 @@ def menu_get_candlestick_data():
             # Invalid input
             print("Invalid choice. Please try again.")
 
-def connect_db_store_candles(candles):
-
+def connect_database():
     # Load the configuration file
     with open('config.json') as f:
         config = json.load(f)
@@ -158,16 +161,68 @@ def connect_db_store_candles(candles):
         password=password,
         database=database
     )
-    cursor = cnx.cursor()
+    return cnx
+
+
+def connect_db_store_candles(candles,asset):
+
+    cnx=connect_database()
+    cursor=cnx.cursor()
+
     for candle in candles:
         # Extract the data from the candle
-        timestamp, high_price, low_price,open_price, close_price, volume = candle
+        timestamp,low_price, high_price,open_price, close_price, volume = candle
         # Insert the data into the table
-        cursor.execute(
-            f"INSERT INTO Candels (Date, high, low,open, close, volume) VALUES ({timestamp}, {high_price}, {low_price},{open_price}, {close_price}, {volume})")
+        try:
+            cursor.execute(
+            f"INSERT INTO Candel (pair,Date, high, low,open, close, volume) VALUES ('{asset}',{timestamp}, {high_price}, {low_price},{open_price}, {close_price}, {volume})")
+        except mysql.connector.errors.IntegrityError:
+            print(sys.exc_info())
 
     # Commit the changes
     cnx.commit()
+    cursor.close()
+    cnx.close()
+
+
+def store_latest_trades(asset):
+    cnx=connect_database()
+    cursor=cnx.cursor()
+
+    # Send a GET request to the Coinbase Pro API
+    response = requests.get(f"https://api.pro.coinbase.com/products/{asset}/trades")
+
+    # Check the status code to make sure the request was successful
+    if response.status_code == 200:
+        data = response.json()
+        # The trades data is returned as a list of dictionaries
+        trades = data
+        # Iterate over the trades
+        for trade in trades:
+            print(trade)
+            # Extract the data from the trade
+            trade_id = trade['trade_id']
+            timestamp = trade['time']
+            dt = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%fZ')
+            dt_str = dt.strftime('%Y-%m-%d %H:%M:%S')
+            side = trade['side']
+            price = trade['price']
+            size = trade['size']
+
+            try:
+                # Insert the data into the table
+                cursor.execute(f"INSERT INTO trades (trade_id, asset, trades.timestamp, side, price, size) VALUES ({trade_id}, '{asset}', '{dt_str}', '{side}', {price}, {size})")
+            except mysql.connector.errors.IntegrityError:
+                print(sys.exc_info())
+
+    else:
+        # Print an error message if the request was unsuccessful
+        print("Error:", response.status_code)
+
+    # Commit the changes
+    cnx.commit()
+    cursor.close()
+    cnx.close()
 
 
 def print_menu():
@@ -175,6 +230,8 @@ def print_menu():
   print("2. Get the bid or ask on a pair")
   print("3. Get the orderbook on a pair")
   print("4. Get candel and store in db")
+  print("5. Get trades and store in db")
+
 def menu():
     while True:
         print_menu()
@@ -186,11 +243,12 @@ def menu():
             menuBidAsk()
         if choice== "3":
             asset = input("Enter the asset (e.g., BTC-USD): ")
-            print(get_order_book(asset))
+            print(get_order_book())
         if choice =="4":
             menu_get_candlestick_data()
-
-
+        if choice =="5":
+            asset = input("Enter the asset (e.g., BTC-USD): ")
+            store_latest_trades(asset)
 
 
 menu()
