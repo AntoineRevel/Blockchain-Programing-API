@@ -1,4 +1,7 @@
+import hashlib
+import hmac
 from datetime import datetime
+from wsgiref import headers
 
 import requests
 import mysql.connector
@@ -224,14 +227,50 @@ def store_latest_trades(asset):
     cursor.close()
     cnx.close()
 
+def create_order(price, size, side, product_id):
+    # Set the API endpoint and request headers
+    endpoint = "https://api.pro.coinbase.com/orders"
+    request_path = "/orders"
+
+    with open('config.json') as f:
+        config = json.load(f)
+
+    # Extract the API keys from the configuration file
+    api_key = config['coinbase_pro']['api_key']
+    api_secret = config['coinbase_pro']['api_secret']
+
+    headers = {
+        "Content-Type": "application/json",
+        "CB-ACCESS-KEY": api_key,
+        "CB-ACCESS-SIGN": "",
+        "CB-ACCESS-TIMESTAMP": "",
+    }
+
+    # Set the request payload
+    payload = {
+        "price": price,
+        "size": size,
+        "side": side,
+        "product_id": product_id
+    }
+
+    # Sign the request
+    signature = hmac.new(api_secret.encode("utf-8"), request_path.encode("utf-8"), hashlib.sha256).hexdigest()
+    headers["CB-ACCESS-SIGN"] = signature
+
+    # Send the request
+    response = requests.post(endpoint, payload, headers)
+
+    # Return the response
+    return response
 
 def print_menu():
-  print("1. Get all pairs listed on coin base")
-  print("2. Get the bid or ask on a pair")
-  print("3. Get the orderbook on a pair")
-  print("4. Get candel and store in db")
-  print("5. Get trades and store in db")
-
+    print("1. Get all pairs listed on coin base")
+    print("2. Get the bid or ask on a pair")
+    print("3. Get the orderbook on a pair")
+    print("4. Get candel and store in db")
+    print("5. Get trades and store in db")
+    print("6. Make a market order")
 def menu():
     while True:
         print_menu()
@@ -249,6 +288,15 @@ def menu():
         if choice =="5":
             asset = input("Enter the asset (e.g., BTC-USD): ")
             store_latest_trades(asset)
+        if choice=="6":
+            pair = input("Enter the asset (e.g., BTC-USD): ")
+            side = input("Choose the side eg BUY or SELL : ")
+            quantity = input("Choose how many crypto you want to trade : ")
+            price = input("Choose the price for your order : ")
+            print(create_order(price,quantity,side,pair))
+        else:
+            print("\nInvalid choice. Please try again.\n")
+        print("")
 
 
 menu()
